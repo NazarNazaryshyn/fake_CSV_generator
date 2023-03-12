@@ -1,0 +1,163 @@
+{% extends "base.html" %}
+{% block content %}
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
+    <script>
+        function generateData(event, schema_id, column_separator, string_character){
+            event.preventDefault();
+
+            const date = new Date();
+            const options = {
+              year: 'numeric',
+              month: 'long',
+              day: 'numeric'
+            };
+            const formattedDate = date.toLocaleDateString('en-US', options);
+
+            console.log(formattedDate);
+            let rows_amount = document.getElementById('rows_amount').value;
+            let table = document.getElementById('data-table')
+            table.innerHTML = '';
+
+            let i = 1;
+            while(i <= rows_amount){
+                let tr = document.createElement('tr');
+                tr.id = "row_" + i;
+                let th = document.createElement('th')
+                th.scope = 'row';
+                th.innerHTML = i;
+
+                let td_1 = document.createElement('td');
+                td_1.classList.add("border", "border-right-muted");
+                td_1.innerHTML = formattedDate;
+
+                // Status button
+                let td_2 = document.createElement('td');
+                td_2.classList.add("border", "border-right-muted", "px-2", "py-1");
+                let p = document.createElement('p');
+                p.classList.add("bg-secondary");
+                p.innerHTML = "Processing";
+                p.classList.add("d-inline-block", "text-white", "px-2", "py-1", "rounded", "mt-1");
+                td_2.appendChild(p)
+
+                // Download button
+                let td_3 = document.createElement('td');
+                td_3.id = 'td_3_'+ i;
+                td_3.classList.add("border", "border-right-muted")
+
+                tr.appendChild(th);
+                tr.appendChild(td_1);
+                tr.appendChild(td_2);
+                tr.appendChild(td_3);
+                table.appendChild(tr);
+                i++;
+            }
+
+            $.ajax({
+                url: "delete_all/",
+                data: {
+                    schema_id: schema_id
+                },
+                method: "GET",
+                success: function onSuccess(){
+                            $.ajax({
+                                url: 'generate_data/',
+                                type: 'GET',
+                                data: {
+                                    rows_amount: rows_amount,
+                                    schema_id: schema_id,
+                                    column_separator: column_separator,
+                                    string_character: string_character
+                                },
+                            })
+                            function checkProcessing(){
+                                 $.ajax({
+                                    url: 'check_for_processing/',
+                                    type: 'GET',
+                                    data: {
+                                        schema_id: schema_id
+                                    },
+                                    success: function onSuccess(response){
+                                        let j = 0;
+                                        while (j < response['status'].length){
+
+                                            let element = document.getElementById("row_"+(j+1));
+                                            let p = element.querySelector('p');
+                                            let td_3 = element.querySelector('#td_3_'+(j+1));
+                                            p.classList.add("bg-success");
+                                            p.innerHTML = "Ready";
+                                            let a = document.createElement('a');
+                                            a.innerHTML = '';
+                                            a.innerHTML = "Download";
+                                            a.href = response['status'][j]['unique_id'];
+                                            td_3.innerHTML = '';
+                                            td_3.appendChild(a)
+                                            j++;
+                                            if (j === parseInt(rows_amount)){
+                                                clearInterval(myInterval)
+                                            }
+                                        }
+                                    }
+                                })
+                            }
+                            const myInterval = setInterval(checkProcessing, 1000)
+
+                }
+            })
+        }
+    </script>
+    <div class="mt-3 w-50">
+        <div class="d-flex flex-row align-items-center">
+            <p class="h3 text-dark fw-semibold me-5">Sample schema</p>
+            <a href="{% url 'edit_schema' schema.pk %}" class="text-decoration-none text-primary">Edit schema</a>
+        </div>
+        <div>
+            <table class="table border border-muted my-3">
+                <thead>
+                    <tr>
+                      <th scope="col" class="border border-right-muted">#</th>
+                      <th scope="col" class="border border-right-muted">Column name</th>
+                      <th scope="col" class="border border-right-muted">Column type</th>
+                    </tr>
+                  </thead>
+                <tbody>
+                    {% for column in schema_columns %}
+                        <tr>
+                          <th scope="row">{{ forloop.counter }}</th>
+                              <td class="border border-right-muted">{{ column.column_name }}</td>
+                              <td class="border border-right-muted">{{ column.data_type.column_type }}</td>
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+    <div class="mt-3 w-75">
+        <div class="d-flex flex-row justify-content-between">
+            <div>
+                <p class="h3 text-dark fw-semibold">Data sets</p>
+            </div>
+            <div class="d-flex flex-row justify-content-end align-items-center">
+                <div class="d-flex flex-row align-items-center me-2">
+                    <label class="me-3">Rows:</label>
+                    <input type="number" name="rows_amount" id="rows_amount" class="border border-muted rounded p-1 w-25" placeholder="10" required/>
+                </div>
+                <button onclick="generateData(event, {{schema.pk}}, '{{ schema.column_separator }}', '{{ schema.string_character }}')" class="btn btn-success">Generate Data</button>
+            </div>
+        </div>
+        <div>
+            <table class="table border border-muted my-3">
+                    <thead>
+                        <tr>
+                            <th scope="col" class="border border-right-muted">#</th>
+                            <th scope="col" class="border border-right-muted">Created</th>
+                            <th scope="col" class="border border-right-muted">Status</th>
+                            <th scope="col" class="border border-right-muted">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody id="data-table">
+                    </tbody>
+                </table>
+        </div>
+    </div>
+
+{% endblock %}

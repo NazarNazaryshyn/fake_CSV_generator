@@ -1,0 +1,29 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Login page</title>
+    {% load static %}
+    <link href="{% static 'css/bootstrap.min.css' %}" rel="stylesheet">
+    <link href="{% static 'js/bootstrap.min.js' %}">
+</head>
+<body>
+<div class="container text-center">
+  <form method="post">
+      {% csrf_token %}
+      <div class="vh-100 d-flex align-items-center">
+          <div class="d-flex flex-column mx-auto border rounded p-5">
+              <p class="h2 fw-semibold text-dark">Login</p>
+                  <input type="text" name="username" id="username" class="border rounded border-muted p-1 mt-5 form-control" placeholder="Username" required>
+                  <input type="password" name="password" id="password" class="border rounded border-muted p-1 mt-3 form-control" placeholder="Password" required>
+                  <div class="d-flex justify-content-end mt-3 pb-5">
+                      <button type="submit" class="btn btn-primary">Login</button>
+                  </div>
+                  {% if error %}
+                     <p class="text-danger">{{ error }}</p>
+                  {% endif %}
+          </div>
+      </div>
+  </form>
+</body>
+</html>

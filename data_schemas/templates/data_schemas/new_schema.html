@@ -1,0 +1,250 @@
+{% extends "base.html" %}
+{% block content %}
+    <script>
+        function generateRandomId(length) {
+            let chars = '0123456789abcdefghijklmnopqrstuvwxyz';
+            let id = '';
+            for (let i = 0; i < length; i++) {
+                id += chars[Math.floor(Math.random() * chars.length)];
+            }
+            return id;
+        };
+        function addColumn(event){
+            event.preventDefault();
+
+            let columns_block = document.getElementById("columns");
+            let column = document.getElementById("new_column");
+            let unique_id = generateRandomId(8);
+
+            let cloned = column.cloneNode(true);
+            cloned.id = unique_id;
+
+            let a_tag = cloned.querySelector("a");
+            a_tag.addEventListener('click', function(){
+                deleteColumn(event, unique_id)
+            });
+
+            columns_block.appendChild(cloned);
+        };
+        function deleteColumn(event, column_name){
+            event.preventDefault();
+            let column = document.getElementById(column_name);
+            column.remove();
+        };
+    </script>
+    <div class="py-3 w-75">
+        <form method="post">
+            {% csrf_token %}
+            <div class="d-flex justify-content-between">
+                <p class="h3 fw-semibold">New schema</p>
+                <button type="submit" class="btn btn-primary">Submit</button>
+            </div>
+            <div class="d-flex flex-column mt-3">
+                <div class="d-flex flex-column w-50">
+                    <label>Name</label>
+                    <input type="text" name="schema_title" id="schema_title" class="border border-muted rounded mt-2 p-1" required/>
+                </div>
+                <div class="mt-3">
+                    <div class="input-group mb-3 d-flex flex-column w-50">
+                      <label class="pb-2">Column separator</label>
+                      <select type="text" name="schema_column_separator" id="schema_column_separator" class="custom-select p-1 border border-muted rounded" required>
+                          <option value="Comma" selected>Comma (,)</option>
+                          <option value="Tab">Tab (\t)</option>
+                          <option value="SemiColon">Semi-colon (;)</option>
+                          <option value="Pipe">Pipe (|)</option>
+                      </select>
+                    </div>
+                </div>
+                <div class="">
+                    <div class="input-group d-flex flex-column w-50">
+                      <label class="pb-2">String character</label>
+                      <select type="text" name="schema_string_character" id="schema_string_character" class="custom-select p-1 border border-muted rounded" required>
+                        <option value='DoubleQuote' selected>Double-quote (")</option>
+                        <option value="SingleQuote">Single-quote (')</option>
+                      </select>
+                    </div>
+                </div>
+
+
+            </div>
+            <div class="mt-3 px-2" id="columns">
+                <p class="h3 text-dark fw-semibold">Schema columns</p>
+                <div class="d-flex justify-content-between mt-4" id="column-1">
+                    <div class="d-flex flex-row">
+                        <div class="d-flex flex-column">
+                            <label class="mb-2">Column name</label>
+                            <input type="text"  name="column_name" id="column_name" class="border border-muted rounded p-1 me-3" placeholder="Name"/>
+                        </div>
+                        <div class="d-flex flex-column">
+                            <label class="mb-2">Type</label>
+                            <select type="text"  name="column_type" id="column_type" class="custom-select p-1 border border-muted rounded mw-100">
+                                {% for type in data_types %}
+                                    {% if forloop.counter == 1 %}
+                                        <option selected>{{ type.column_type }}</option>
+                                    {% else %}
+                                        <option value="{{ type.column_type }}">{{ type.column_type }}</option>
+                                    {% endif %}
+                                {% endfor %}
+                              </select>
+                        </div>
+                    </div>
+                    <div class="d-flex flex-row align-items-center">
+                        <div class="d-flex flex-column">
+                            <label class="mb-2">Order</label>
+                            <div class="d-flex flex-row align-items-center">
+                                <input type="number" name="column_order" id="column_order" class="border border-muted rounded p-1 me-2" value="0"/>
+                                <a href="" onclick="deleteColumn(event, 'column-1')" class="text-decoration-none text-danger">Delete</a>
+                            </div>
+
+                        </div>
+
+                    </div>
+
+                </div>
+                <div class="d-flex justify-content-between mt-3 " id="column-2">
+                    <div class="d-flex flex-row">
+                        <div class="d-flex flex-column">
+                            <label class="mb-2">Column name</label>
+                            <input type="text" name="column_name" id="column_name" class="border border-muted rounded p-1 me-3" placeholder="Name"/>
+                        </div>
+                        <div class="d-flex flex-column">
+                            <label class="mb-2">Type</label>
+                            <select type="text" name="column_type" id="column_type" class="custom-select p-1 border border-muted rounded mw-100">
+                              {% for type in data_types %}
+                                    {% if forloop.counter == 1 %}
+                                        <option selected>{{ type.column_type }}</option>
+                                    {% else %}
+                                        <option value="{{ type.column_type }}">{{ type.column_type }}</option>
+                                    {% endif %}
+                                {% endfor %}
+                              </select>
+                        </div>
+                        <div class="ms-3 d-flex flex-row justify-content-start">
+                            <div class="d-flex flex-column">
+                                <label class="mb-2">From</label>
+                                <input class="border border-muted rounded p-1 me-3 w-25" placeholder="18"/>
+                            </div>
+                            <div class="d-flex flex-column">
+                                <label class="mb-2">To</label>
+                                <input class="border border-muted rounded p-1 me-3 w-25" placeholder="60"/>
+                            </div>
+                        </div>
+
+
+
+                    </div>
+                    <div class="d-flex flex-row align-items-center">
+                        <div class="d-flex flex-column">
+                            <label class="mb-2">Order</label>
+                            <div class="d-flex flex-row align-items-center">
+                                <input  type="number" name="column_order" id="column_order" class="border border-muted rounded p-1 me-2" value="1"/>
+                                <a href="" onclick="deleteColumn(event, 'column-2')" class="text-decoration-none text-danger">Delete</a>
+                            </div>
+
+                        </div>
+
+                    </div>
+
+                </div>
+                <div class="d-flex justify-content-between mt-3 " id="column-3">
+                    <div class="d-flex flex-row">
+                        <div class="d-flex flex-column">
+                            <label class="mb-2">Column name</label>
+                            <input type="text" name="column_name" id="column_name" class="border border-muted rounded p-1 me-3" placeholder="Name"/>
+                        </div>
+                        <div class="d-flex flex-column">
+                            <label class="mb-2">Type</label>
+                            <select type="text" name="column_type" id="column_type" class="custom-select p-1 border border-muted rounded mw-100">
+                                {% for type in data_types %}
+                                    {% if forloop.counter == 1 %}
+                                        <option selected>{{ type.column_type }}</option>
+                                    {% else %}
+                                        <option value="{{ type.column_type }}">{{ type.column_type }}</option>
+                                    {% endif %}
+                                {% endfor %}
+                              </select>
+                        </div>
+                    </div>
+                    <div class="d-flex flex-row align-items-center">
+                        <div class="d-flex flex-column">
+                            <label class="mb-2">Order</label>
+                            <div class="d-flex flex-row align-items-center">
+                                <input type="number" name="column_order" id="column_order" class="border border-muted rounded p-1 me-2" value="2"/>
+                                <a href="" onclick="deleteColumn(event, 'column-3')" class="text-decoration-none text-danger">Delete</a>
+                            </div>
+
+                        </div>
+
+                    </div>
+
+                </div>
+                <div class="d-flex justify-content-between mt-3 " id="column-4">
+                    <div class="d-flex flex-row">
+                        <div class="d-flex flex-column">
+                            <label class="mb-2">Column name</label>
+                            <input type="text" name="column_name" id="column_name" class="border border-muted rounded p-1 me-3" placeholder="Name"/>
+                        </div>
+                        <div class="d-flex flex-column">
+                            <label class="mb-2">Type</label>
+                            <select type="text" name="column_type" id="column_type" class="custom-select p-1 border border-muted rounded mw-100">
+                                {% for type in data_types %}
+                                    {% if forloop.counter == 1 %}
+                                        <option selected>{{ type.column_type }}</option>
+                                    {% else %}
+                                        <option value="{{ type.column_type }}">{{ type.column_type }}</option>
+                                    {% endif %}
+                                {% endfor %}
+                              </select>
+                        </div>
+                    </div>
+                    <div class="d-flex flex-row align-items-center">
+                        <div class="d-flex flex-column">
+                            <label class="mb-2">Order</label>
+                            <div class="d-flex flex-row align-items-center">
+                                <input type="number" name="column_order" id="column_order" class="border border-muted rounded p-1 me-2" value="3"/>
+                                <a href="" onclick="deleteColumn(event, 'column-4')" class="text-decoration-none text-danger">Delete</a>
+                            </div>
+
+                        </div>
+
+                    </div>
+
+                </div>
+            </div>
+        </form>
+        <div class="border border-muted rounded px-2 mt-4 pb-3 mb-5">
+
+                <div class="d-flex justify-content-between mt-3" id="new_column">
+                     <div class="d-flex flex-row">
+                        <div class="d-flex flex-column">
+                            <label class="mb-2">Column name</label>
+                            <input type="text" name="column_name" id="column_name" class="border border-muted rounded p-1 me-3" placeholder="Name"/>
+                        </div>
+                        <div class="d-flex flex-column">
+                            <label class="mb-2">Type</label>
+                            <select type="text" name="column_type" id="column_type" class="custom-select p-1 border border-muted rounded mw-100" id="inputGroupSelect05">
+                                {% for type in data_types %}
+                                        {% if forloop.counter == 1 %}
+                                            <option selected>{{ type.column_type }}</option>
+                                        {% else %}
+                                            <option value="{{ type.column_type }}">{{ type.column_type }}</option>
+                                        {% endif %}
+                                {% endfor %}
+                              </select>
+                        </div>
+                    </div>
+                        <div class="d-flex flex-row align-items-center">
+                        <div class="d-flex flex-column">
+                            <label class="mb-2">Order</label>
+                            <div class="d-flex flex-row align-items-center">
+                                <input type="number" name="column_order" id="column_order" class="border border-muted rounded p-1 me-2" value="4" />
+                                <a href="javascript:void(0)" id="delete_a" class="text-decoration-none text-danger">Delete</a>
+                            </div>
+                        </div>
+                     </div>
+                </div>
+                <button class="btn btn-primary mt-3" onclick="addColumn(event)">Add column</button>
+            </div>
+    </div>
+
+{% endblock %}

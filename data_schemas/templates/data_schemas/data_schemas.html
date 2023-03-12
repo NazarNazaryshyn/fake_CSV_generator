@@ -1,0 +1,48 @@
+{% extends "base.html" %}
+{% block content %}
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
+    <script>
+        function deleteSchema(event, schema_id){
+            event.preventDefault();
+            let item = document.getElementById(schema_id);
+            item.remove();
+
+            $.ajax({
+                url: schema_id,
+                method: "GET"
+            })
+        }
+    </script>
+    <div class="py-3 w-75">
+        <div class="d-flex justify-content-between">
+            <p class="h4 fw-semibold">Data schemas</p>
+            <a href="{% url 'new_schema' %}" class="btn btn-success p-2">New schema</a>
+        </div>
+        <table class="table border border-muted my-3">
+            <thead>
+                <tr>
+                  <th scope="col" class="border border-right-muted">#</th>
+                  <th scope="col" class="border border-right-muted">Title</th>
+                  <th scope="col" class="border border-right-muted">Modified</th>
+                  <th scope="col">Actions</th>
+                </tr>
+              </thead>
+            <tbody>
+            {% for item in schemas %}
+                <tr id='{{ item.id }}'>
+                  <th scope="row">{{ forloop.counter }}</th>
+                      <td class="border border-right-muted text-primary">
+                         <a href="{% url 'data_sets' item.pk %}" class="text-decoration-none">{{ item.title }}</a>
+                      </td>
+                      <td class="border border-right-muted">{{ item.updated_at }}</td>
+                      <td>
+                          <a href="{% url 'edit_schema' item.id %}" class="text-primary text-decoration-none me-3">Edit scheme</a>
+                          <a href="" onclick="deleteSchema(event, {{ item.id }})" class="text-danger text-decoration-none">Delete</a>
+                      </td>
+                </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+    </div>
+
+{% endblock %}
