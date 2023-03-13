@@ -12,7 +12,8 @@
   <form method="post">
       {% csrf_token %}
       <div class="vh-100 d-flex align-items-center">
-          <div class="d-flex flex-column mx-auto border rounded p-5">
+        <div class="mx-auto border rounded w-50">
+          <div class="d-flex flex-column mx-auto p-5 w-50">
               <p class="h2 fw-semibold text-dark">Login</p>
                   <input type="text" name="username" id="username" class="border rounded border-muted p-1 mt-5 form-control" placeholder="Username" required>
                   <input type="password" name="password" id="password" class="border rounded border-muted p-1 mt-3 form-control" placeholder="Password" required>
@@ -23,6 +24,7 @@
                      <p class="text-danger">{{ error }}</p>
                   {% endif %}
           </div>
+        <div>
       </div>
   </form>
 </body>

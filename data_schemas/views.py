@@ -1,17 +1,15 @@
 import datetime
-
-from django.http import JsonResponse, HttpResponse
-from django.shortcuts import render, redirect
-from django.views.generic import ListView
-
-from data_schemas.models import Schema, SchemaColumn, DataType, DataSet
-
+import random
 import csv
 import uuid
+import time
 
-import random
+from django.http import JsonResponse, HttpResponse, HttpRequest
+from django.shortcuts import render, redirect
+from data_schemas.models import Schema, SchemaColumn, DataType, DataSet
 
 
+# Dictionary to determine csv string characters and column separators
 csv_character = {
     'DoubleQuote': '"',
     'SingleQuote': "'",
@@ -22,14 +20,14 @@ csv_character = {
 }
 
 
+# Dictionary with data for csv generation
 data_types_random_value = {
     "Date": ["May 10, 1992", "August 3, 1987", "November 22, 2001", "July 17, 1998", "January 4, 2004",
              "September 19, 1995", "March 8, 1989", "December 12, 2008", "April 29, 1991", "October 2, 1997"],
     "Address": ["1234 Main Street, Anytown, USA", "5678 Elm Street, Somewhere, USA", "9101 Pine Avenue, Anywhere, USA",
                 "2345 Maple Road, Nowhere, USA", "6789 Oak Lane, Everywhere, USA", "1111 Cherry Street, Here, USA",
-                "2222 Magnolia Avenue, There, USA", "3333 Cedar Boulevard, Anyplace, USA", "4444 Birch Lane, Someplace, USA",
-                "5555 Willow Way, Everywhere, USA"],
-    "Integer": [],
+                "2222 Magnolia Avenue, There, USA", "3333 Cedar Boulevard, Anyplace, USA",
+                "4444 Birch Lane, Someplace, USA", "5555 Willow Way, Everywhere, USA"],
     "Text": ["The quick brown fox jumps over the lazy dog.", "A penny saved is a penny earned.",
              "The early bird catches the worm.", "All work and no play makes Jack a dull boy.",
              "The sky is the limit.", "Actions speak louder than words.",
@@ -52,9 +50,11 @@ data_types_random_value = {
 }
 
 
-def new_schema(request):
+# View to create new schema
+def new_schema(request: HttpRequest) -> HttpResponse:
     if request.method == "POST":
-        new_schema = Schema(owner=request.user,
+        new_schema = Schema(
+                            owner=request.user,
                             title=request.POST.get('schema_title'),
                             column_separator=request.POST.get('schema_column_separator'),
                             string_character=request.POST.get('schema_string_character')
@@ -77,18 +77,21 @@ def new_schema(request):
         return redirect('data_sets', new_schema.id)
 
     data_types = DataType.objects.all()
-    return render(request, "data_schemas/new_schema.html",
-                  {"data_types": data_types})
+    return render(request, "data_schemas/new_schema.html", {"data_types": data_types})
 
 
-def data_sets(request, pk):
+# Data sets view
+def data_sets(request: HttpRequest, pk: int) -> HttpResponse:
     schema = Schema.objects.filter(id=pk).first()
     schema_columns = SchemaColumn.objects.filter(schema=schema).all()
-    return render(request, "data_schemas/data_sets.html", {"schema": schema,
-                                                           "schema_columns": schema_columns})
+    return render(request, "data_schemas/data_sets.html", {
+                                                           "schema": schema,
+                                                           "schema_columns": schema_columns
+                                                           })
 
 
-def generate_data(request):
+# View to generate csv with fake data
+def generate_data(request: HttpRequest) -> JsonResponse:
     schema_id = int(request.GET.get('schema_id'))
     column_separator = request.GET.get('column_separator')
     string_character = request.GET.get('string_character')
@@ -106,11 +109,11 @@ def generate_data(request):
     )
     new_data_set.save()
 
-    import time
     time.sleep(0.5)
 
     csv_headers = [header.column_name for header in schema_cols]
     data_type_rows = [type.data_type for type in schema_cols]
+
     with open(f'media/{unique_id}.csv', 'w', encoding='UTF8', newline='') as f:
         writer = csv.writer(f, delimiter=csv_character[column_separator],
                             quotechar=csv_character[string_character],
@@ -118,7 +121,8 @@ def generate_data(request):
         writer.writerow(["#", *csv_headers])
         for index in range(rows):
             for _ in schema_cols:
-                row = [random.choice(data_types_random_value[str(header)]) if str(header) != "Integer" else random.randint(18, 60) for header in data_type_rows]
+                row = [random.choice(data_types_random_value[str(header)]) if str(header) != "Integer"
+                       else random.randint(18, 60) for header in data_type_rows]
             writer.writerow([index, *row])
 
     new_data_set.status = True
@@ -133,7 +137,8 @@ def generate_data(request):
     return JsonResponse({"status": data})
 
 
-def download_csv(request, unique_id):
+# View to download csv by its unique_id
+def download_csv(request: HttpRequest, unique_id: int) -> HttpResponse:
     file_path = f'media/{unique_id}.csv'
     with open(file_path, 'r') as f:
         csv_data = f.read()
@@ -143,35 +148,22 @@ def download_csv(request, unique_id):
     return response
 
 
-def check_for_processing(request):
-
-    items = DataSet.objects.filter(schema_id=int(request.GET.get('schema_id'))).all()
-    items_list = []
-
-    for item in items:
-        if item.status:
-            items_list.append({
-                               "id": item.id,
-                               "status": item.status,
-                               "unique_id": item.unique_id
-                               })
-
-    return JsonResponse({"status": items_list})
-
-
-def delete_schema(request, schema_id):
+# View to delete schema by its id
+def delete_schema(request: HttpRequest, schema_id: int) -> JsonResponse:
     Schema.objects.filter(id=schema_id).delete()
 
     return JsonResponse({"status": "deleted"})
 
 
-def delete_all_sets(request):
+# View to delete user's data sets
+def delete_all_sets(request: HttpRequest) -> JsonResponse:
     DataSet.objects.filter(schema_id=(request.GET.get("schema_id"))).delete()
 
     return JsonResponse({"status": "deleted"})
 
 
-def edit_schema(request, pk):
+# View to edit user's schemas
+def edit_schema(request: HttpRequest, pk: int) -> HttpResponse:
     schema = Schema.objects.filter(id=pk).first()
     schema_columns = SchemaColumn.objects.filter(schema=schema).all()
     data_types = DataType.objects.filter().all()
@@ -204,10 +196,10 @@ def edit_schema(request, pk):
                                                              'data_types': data_types})
 
 
-class DataSchemas(ListView):
-    model = Schema
-    template_name = "data_schemas/data_schemas.html"
-    context_object_name = "schemas"
+# Main page with all user's schemas
+def data_schemas(request: HttpRequest) -> HttpResponse:
+    data_schemas = Schema.objects.filter(owner=request.user).all()
 
-    def get_queryset(self):
-        return Schema.objects.filter(owner=self.request.user).all()
+    return render(request, "data_schemas/data_schemas.html", {'schemas': data_schemas})
+
+

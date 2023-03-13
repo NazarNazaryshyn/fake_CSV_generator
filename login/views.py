@@ -1,12 +1,15 @@
+from django.http import HttpResponse, HttpRequest
 from django.shortcuts import render, redirect
 from django.contrib.auth import authenticate, login, logout
 
 
-def main(request):
+# Main login page
+def main(request: HttpRequest) -> HttpResponse:
     return render(request, 'login/login.html')
 
 
-def login_view(request):
+# Login view
+def login_view(request: HttpRequest) -> HttpResponse:
     if request.method == "POST":
         username = request.POST.get("username")
         password = request.POST.get('password')
@@ -24,7 +27,8 @@ def login_view(request):
     return render(request, "login/login.html", {"error":error})
 
 
-def logout_view(request):
+# Logout view
+def logout_view(request: HttpRequest) -> HttpResponse:
     logout(request)
 
     return redirect('login')
