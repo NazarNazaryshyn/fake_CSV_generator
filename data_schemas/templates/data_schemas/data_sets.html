@@ -2,9 +2,9 @@
 {% block content %}
     <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
     <script>
+        let counter = 1;
         function generateData(event, schema_id, column_separator, string_character){
             event.preventDefault();
-
             const date = new Date();
             const options = {
               year: 'numeric',
@@ -13,44 +13,42 @@
             };
             const formattedDate = date.toLocaleDateString('en-US', options);
 
-            console.log(formattedDate);
+            console.log(counter);
+
             let rows_amount = document.getElementById('rows_amount').value;
             let table = document.getElementById('data-table')
-            table.innerHTML = '';
 
-            let i = 1;
-            while(i <= rows_amount){
-                let tr = document.createElement('tr');
-                tr.id = "row_" + i;
-                let th = document.createElement('th')
-                th.scope = 'row';
-                th.innerHTML = i;
+            let tr = document.createElement('tr');
+            tr.id = "row_" + counter;
+            let th = document.createElement('th')
+            th.scope = 'row';
+            th.innerHTML = String(counter);
 
-                let td_1 = document.createElement('td');
-                td_1.classList.add("border", "border-right-muted");
-                td_1.innerHTML = formattedDate;
+            let td_1 = document.createElement('td');
+            td_1.classList.add("border", "border-right-muted");
+            td_1.innerHTML = formattedDate;
 
-                // Status button
-                let td_2 = document.createElement('td');
-                td_2.classList.add("border", "border-right-muted", "px-2", "py-1");
-                let p = document.createElement('p');
-                p.classList.add("bg-secondary");
-                p.innerHTML = "Processing";
-                p.classList.add("d-inline-block", "text-white", "px-2", "py-1", "rounded", "mt-1");
-                td_2.appendChild(p)
+            // Status button
+            let td_2 = document.createElement('td');
+            td_2.classList.add("border", "border-right-muted", "px-2", "py-1");
+            let p = document.createElement('p');
+            p.classList.add("bg-secondary");
+            p.innerHTML = "Processing";
+            p.classList.add("d-inline-block", "text-white", "px-2", "py-1", "rounded", "mt-1");
+            td_2.appendChild(p)
 
-                // Download button
-                let td_3 = document.createElement('td');
-                td_3.id = 'td_3_'+ i;
-                td_3.classList.add("border", "border-right-muted")
+            // Download button
+            let td_3 = document.createElement('td');
+            td_3.id = 'td_3_'+ counter;
+            td_3.classList.add("border", "border-right-muted")
 
-                tr.appendChild(th);
-                tr.appendChild(td_1);
-                tr.appendChild(td_2);
-                tr.appendChild(td_3);
-                table.appendChild(tr);
-                i++;
-            }
+            tr.appendChild(th);
+            tr.appendChild(td_1);
+            tr.appendChild(td_2);
+            tr.appendChild(td_3);
+            table.appendChild(tr);
+
+
 
             $.ajax({
                 url: "delete_all/",
@@ -68,39 +66,22 @@
                                     column_separator: column_separator,
                                     string_character: string_character
                                 },
+                                success: function onSuccess(response){
+                                    console.log(counter)
+                                    let element = document.getElementById("row_"+counter);
+                                    let p = element.querySelector('p');
+                                    let td_3 = element.querySelector('#td_3_'+ counter);
+                                    p.classList.add("bg-success");
+                                    p.innerHTML = "Ready";
+                                    let a = document.createElement('a');
+                                    a.innerHTML = '';
+                                    a.innerHTML = "Download";
+                                    a.href = response['status']['unique_id'];
+                                    td_3.innerHTML = '';
+                                    td_3.appendChild(a)
+                                    counter++;
+                                }
                             })
-                            function checkProcessing(){
-                                 $.ajax({
-                                    url: 'check_for_processing/',
-                                    type: 'GET',
-                                    data: {
-                                        schema_id: schema_id
-                                    },
-                                    success: function onSuccess(response){
-                                        let j = 0;
-                                        while (j < response['status'].length){
-
-                                            let element = document.getElementById("row_"+(j+1));
-                                            let p = element.querySelector('p');
-                                            let td_3 = element.querySelector('#td_3_'+(j+1));
-                                            p.classList.add("bg-success");
-                                            p.innerHTML = "Ready";
-                                            let a = document.createElement('a');
-                                            a.innerHTML = '';
-                                            a.innerHTML = "Download";
-                                            a.href = response['status'][j]['unique_id'];
-                                            td_3.innerHTML = '';
-                                            td_3.appendChild(a)
-                                            j++;
-                                            if (j === parseInt(rows_amount)){
-                                                clearInterval(myInterval)
-                                            }
-                                        }
-                                    }
-                                })
-                            }
-                            const myInterval = setInterval(checkProcessing, 1000)
-
                 }
             })
         }
